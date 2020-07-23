@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Application\Actions;
 
+use RuntimeException;
 use App\Domain\DomainException\DomainRecordNotFoundException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -59,6 +60,35 @@ abstract class Action
         } catch (DomainRecordNotFoundException $e) {
             throw new HttpNotFoundException($this->request, $e->getMessage());
         }
+    }
+
+    /**
+     * response result in json type
+     * $proccessStatus($data, string $message = '', int $httpStatus = 200)
+     * @param  mixed   $data        return data
+     * @param  string  $message     message
+     * @param  mixed   $httpStatus  http status
+     * @return \Psr\Http\Message\ResponseInterface
+     */
+    public function __call(string $processStatus, array $arguments): Response
+    {
+        $data = $arguments[0] ?? null;
+        if (isset($arguments[1]) && !is_string($arguments[1])) {
+            throw new RuntimeException("Second argument should be a string of message!\n");
+        }
+        $message = $arguments[1] ?? '';
+        if (isset($arguments[2]) && !is_int($arguments[2])) {
+            throw new RuntimeException("Third argument should be a int of http status!\n");
+        }
+        $httpStatus = $arguments[2] ?? 200;
+
+        $content = [
+            'errorCode' => ErrorCode::getCode($processStatus),
+            'message'   => $message === '' ? $processStatus : $message,
+            'data'      => $data
+        ];
+
+        return $this->respondWithData($content, $httpStatus);
     }
 
     /**

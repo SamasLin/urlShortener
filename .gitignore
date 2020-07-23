@@ -1,3 +1,4 @@
+.DS_Store
 .idea/
 .vscode/
 /coverage/
@@ -5,3 +6,4 @@
 /logs/*
 !/logs/README.md
 .phpunit.result.cache
+/var/map/*
