@@ -11,7 +11,7 @@ abstract class UrlAction extends Action
     const EXPIRE_PERIOD = 86400 * 30;
     const MAP_FILE = VAR_PATH . 'map/map.json';
 
-    protected function getUrlMap()
+    protected function getUrlMap(): array
     {
         return file_exists(self::MAP_FILE) ? json_decode(file_get_contents(self::MAP_FILE, true), true) : [];
     }

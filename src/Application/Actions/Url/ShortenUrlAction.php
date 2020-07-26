@@ -19,12 +19,12 @@ class ShortenUrlAction extends UrlAction
     {
         $params = $this->request->getParsedBody();
         if (empty($params) || !is_array($params) || !isset($params['url'])) {
-            return $this->invalid(null, 'input format is error');
+            return $this->invalid('input format is error');
         }
 
         $originalUrl = $params['url'];
         if (!filter_var($originalUrl, FILTER_VALIDATE_URL)) {
-            return $this->invalid(null, 'not valid url');
+            return $this->invalid('not valid url');
         }
 
         $nowTs = time();
@@ -40,37 +40,41 @@ class ShortenUrlAction extends UrlAction
         if (!$lock) {
             flock($fileLock, LOCK_UN);
             fclose($fileLock);
-            return $this->fail(null, 'system is busy, try later');
+            return $this->fail('system is busy, try later');
         }
         
         $urlMap = $this->getUrlMap();
 
         $duplicated = array_filter($urlMap, function ($raw) use ($originalUrl, $nowTs) {
-            return $raw['url'] == $originalUrl && $raw['expireTs'] >= $nowTs;
+            return $raw['url'] == $originalUrl;// && $raw['expireTs'] >= $nowTs;
         });
         if (!empty($duplicated)) {
-            return $this->success(['code' => array_keys($duplicated)[0]]);
+            $result = [
+                'code' => array_keys($duplicated)[0],
+                'sn' => array_values($duplicated)[0]['sn']
+            ];
+        } else {
+            $result = $this->getCodeInfo($urlMap, $nowTs);
+            if ($result === false) {
+                flock($fileLock, LOCK_UN);
+                fclose($fileLock);
+                return $this->fail('too many url in service');
+            }
         }
 
-        $result = $this->getCodeInfo($urlMap, $nowTs);
-        if ($result === false) {
-            flock($fileLock, LOCK_UN);
-            fclose($fileLock);
-            return $this->fail(null, 'too many url in service');
-        }
         $urlMap[$result['code']] = [
             'sn' => $result['sn'],
             'url' => $originalUrl,
-            'expireTs' => $nowTs + self::EXPIRE_PERIOD
+            'expireTs' => $nowTs + parent::EXPIRE_PERIOD
         ];
         $update = $this->updateMap($urlMap);
         flock($fileLock, LOCK_UN);
         fclose($fileLock);
 
-        return $update === false ? $this->fail(null, 'fail, try later') : $this->success(['code' => $result['code']]);
+        return $update === false ? $this->fail('fail, try later') : $this->success(['code' => $result['code']]);
     }
 
-    protected function getCodeInfo(array $urlMap, int $nowTs)
+    protected function getCodeInfo(array $urlMap, int $nowTs, int $slotMax = self::URL_SLOT_MAX)
     {
         if (empty($urlMap)) {
             return [
@@ -80,7 +84,7 @@ class ShortenUrlAction extends UrlAction
         }
 
         $maxSN = max(array_column($urlMap, 'sn'));
-        for ($newSN = $maxSN + 1; $newSN < self::URL_SLOT_MAX; $newSN++) {
+        for ($newSN = $maxSN + 1; $newSN < $slotMax; $newSN++) {
             $code = $this->genCode($urlMap, $newSN);
             if ($code !== false) {
                 return [
@@ -106,11 +110,15 @@ class ShortenUrlAction extends UrlAction
         ];
     }
 
-    protected function genCode(array $urlMap, int $sn)
-    {
+    protected function genCode(
+        array $urlMap,
+        int $sn,
+        int $codeMinLength = self::CODE_LEN_MIN,
+        int $codeMaxLength = self::CODE_LEN_MAX
+    ) {
         $hash = md5((string)$sn);
-        $code = substr($hash, 0, self::CODE_LEN_MIN - 1);
-        $paddingList = str_split(substr($hash, self::CODE_LEN_MIN - 1, self::CODE_LEN_MAX));
+        $code = substr($hash, 0, $codeMinLength - 1);
+        $paddingList = str_split(substr($hash, $codeMinLength - 1, $codeMaxLength - $codeMinLength));
 
         foreach ($paddingList as $char) {
             $code .= $char;

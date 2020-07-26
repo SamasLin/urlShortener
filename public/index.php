@@ -8,10 +8,6 @@ use DI\ContainerBuilder;
 use Slim\Factory\AppFactory;
 use Slim\Factory\ServerRequestCreatorFactory;
 
-define('DS', DIRECTORY_SEPARATOR);
-define('ROOT', realpath('..') . DS);
-define('VAR_PATH', ROOT . 'var' . DS);
-
 require __DIR__ . '/../vendor/autoload.php';
 
 // Instantiate PHP-DI ContainerBuilder

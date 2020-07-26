@@ -1,42 +1,71 @@
-# Slim Framework 4 Skeleton Application
 
-[![Coverage Status](https://coveralls.io/repos/github/slimphp/Slim-Skeleton/badge.svg?branch=master)](https://coveralls.io/github/slimphp/Slim-Skeleton?branch=master)
+# URL Shortener
+## Deploy Steps
+1. git pull
+2. composer install
+3. docker build
+4. docker run
+## API Interface
+- ### `POST` /
+    以完整網址取得短網址 code
 
-Use this skeleton application to quickly setup and start working on a new Slim Framework 4 application. This application uses the latest Slim 4 with Slim PSR-7 implementation and PHP-DI container implementation. It also uses the Monolog logger.
+    Form data:
 
-This skeleton application was built for Composer. This makes setting up a new Slim Framework application quick and easy.
+        {
+            url: $url
+        }
+    - string ***`$url`*** : 完整網址
+- ### `GET` /{code}
+    以短網址 code 取得完整網址
 
-## Install the Application
-
-Run this command from the directory in which you want to install your new Slim Framework application.
-
-```bash
-composer create-project slim/slim-skeleton [my-app-name]
-```
-
-Replace `[my-app-name]` with the desired directory name for your new application. You'll want to:
-
-* Point your virtual host document root to your new application's `public/` directory.
-* Ensure `logs/` is web writable.
-
-To run the application in development, you can run these commands 
-
-```bash
-cd [my-app-name]
-composer start
-```
-
-Or you can use `docker-compose` to run the app with `docker`, so you can run these commands:
-```bash
-cd [my-app-name]
-docker-compose up -d
-```
-After that, open `http://localhost:8080` in your browser.
-
-Run this command in the application directory to run the test suite
-
-```bash
-composer test
-```
-
-That's it! Now go build something cool.
+    - string ***`code`*** : 短網址 code
+- #### Return Error Code
+    <table>
+        <thead>
+            <tr>
+                <th>errorCode</th>
+                <th>type</th>
+                <th>description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr valign="top">
+                <td>-1</td>
+                <td>unknown</td>
+                <td>不明狀態</td>
+            </tr>
+            <tr valign="top">
+                <td>0</td>
+                <td>success</td>
+                <td>執行成功</td>
+            </tr>
+            <tr valign="top">
+                <td>1</td>
+                <td>fail</td>
+                <td>執行失敗</td>
+            </tr>
+            <tr valign="top">
+                <td>2</td>
+                <td>invalid</td>
+                <td>檢核失敗</td>
+            </tr>
+            <tr valign="top">
+                <td>999</td>
+                <td>exception</td>
+                <td>系統錯誤</td>
+            </tr>
+        </tbody>
+    </table>
+## Features
+### System/Function:
+- implement Redis
+- implement worker for shortening
+- use DB (no-sql is better than RDB) for mapping storage and race condition
+- logs
+- optimize config loading method
+- authorization (for user-customized short code)
+### CI/CD:
+- docker-compose
+- k8s
+- drone (or others)
+- code sniffer

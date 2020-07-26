@@ -6,6 +6,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\App;
 use App\Application\Actions\Url\ShortenUrlAction;
 use App\Application\Actions\Url\ParseUrlAction;
+use App\Application\Middleware\DefinePathMiddleware;
 
 return function (App $app) {
     $app->options('/{routes:.*}', function (Request $request, Response $response) {
@@ -33,6 +34,8 @@ return function (App $app) {
         return $response;
     });
 
-    $app->post('/', ShortenUrlAction::class);
-    $app->get('/{code:.*}', ParseUrlAction::class);
+    $definePathMiddleware = new DefinePathMiddleware;
+
+    $app->post('/', ShortenUrlAction::class)->add($definePathMiddleware);
+    $app->get('/{code:.*}', ParseUrlAction::class)->add($definePathMiddleware);
 };

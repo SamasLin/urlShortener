@@ -12,14 +12,14 @@ class ParseUrlAction extends UrlAction
         $code = $this->resolveArg('code');
 
         if ($code === '') {
-            return $this->invalid(null, 'empty url code');
+            return $this->invalid('empty url code');
         }
 
         $urlMap = $this->getUrlMap();
         if (!isset($urlMap[$code])) {
-            return $this->fail(null, 'no url data');
+            return $this->fail('no url data');
         } elseif ($urlMap[$code]['expireTs'] < time()) {
-            return $this->fail(null, 'code is expired');
+            return $this->fail('code is expired');
         }
         return $this->success(['url' => $urlMap[$code]['url']]);
     }
